@@ -1,0 +1,24 @@
+{
+  "name": "handsoff-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "export NODE_ENV=test || \"SET NODE_ENV=test\" && mocha server/**/*.test.js --exit",
+    "test-watch": "nodemon --exec \"npm test\" ",
+    "start": "node server/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "handlebars": "^4.3.1",
+    "hbs": "^4.0.4",
+    "lodash": "^4.17.15",
+    "mongodb": "^3.1.10",
+    "mongoose": "^5.7.1",
+    "multer": "^1.4.2",
+    "node-gcm": "^1.0.2"
+  }
+}
