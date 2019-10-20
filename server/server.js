@@ -160,11 +160,39 @@ app.post ('/find-post', async (req, res) => {
         res.send(post.recording);
     } catch (e) {
         console.log('error: ',e);
-        
-        res.status(400).send(e);
+        res.status(400).send({e});
     }
 });
 
+//RCV the post status from recipient, update status and send notification to server
+app.post('/post-status',async (req, res) => {
+    try {
+        const {postId, recipientId, status} = req.body;
+        const post = await Post.findOneAndUpdate({_id: postId, recipientId}, {status},{new: true});
+        const senderUser = await User.findById(post.senderId);
+        const regTokens =   senderUser.deviceId;  
+        const message = new gcm.Message({
+            data: { 
+                postId:  post._id,
+                recipientId: post.recipientId
+                },
+            notification: {
+                title: "handsoff",
+                body: "message you sent, has been played by recipient"
+            }
+        });
+    
+        sender.send(message, { registrationTokens: regTokens }, function (err, response) {
+            if (err) console.error('push error',err);
+            console.log(response);
+            }
+        );
+        res.send();
+    } catch (e) {
+        res.status(400).send({e});
+    }
+    
+});
 
 app.listen(port,() =>{
     console.log(`Started up at port ${port}`);
