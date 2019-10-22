@@ -25,23 +25,6 @@ const upload = multer({});
 // Set up the sender with your GCM/FCM API key (declare this once for multiple messages)
 const sender = new gcm.Sender(process.env.FCM_SERVER_KEY);
 
-// Prepare a message to be sent
-// const message = new gcm.Message({
-//     data: { key1: 'msg1' },
-//     notification: {
-//         title: "Hello, World",
-//         body: "This is a notification that will be displayed if your app is in the background."
-//     }
-// });
- 
-// Specify which registration IDs to deliver the message to
-//const regTokens = ['cgjoJxAevOQ:APA91bH0Ca9gF2gtYFm-UhR9WaulLGyAdAuxjWbjUeGvSM04LQXVt7gZuJZ0Oa4Vtw-P65w57SWtYeaeF-M95a7S_GwdNqOnl6zeQJqDuuMdSFBtBq4m5hVvQOBmOjm7oX8_GdYKYCfa'];
- 
-// Actually send the message
-// sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-//     if (err) console.error('push error',err);
-//     else console.log(response);
-// });
 
 //Setup handlebars engine and views location
 app.set('view engine', 'hbs');                         //set allows to set a value for a given express setting.'key'-the setting name, 'value'
@@ -65,7 +48,7 @@ app.post('/signup',async (req,res) =>{
         res.send(user);
     } catch (e) {
         console.log('error',e);
-        res.status(404).send(e);
+        res.send(`error: ${e.message}`);
     }
 });
 
@@ -78,28 +61,27 @@ app.post('/find-user',async (req,res) => {
         });
         if (!user) {
             console.log('user not found');
-            res.status(404).send('user not found');
-        } 
-        
-        let conversation = await Conversation.findOne({
-            $and: [
-                {
-                participants: user._id,
-                participants: body.MyId
-                }
-            ]
-        });
-        if (!conversation) {
-            conversation = new Conversation({participants: [user.id, body.MyId]});
-            await conversation.save();
-        }
-        const response = {user,conversation};
-        res.send(response);
-          
+            res.send('error: user not found');
+        } else {
+            let conversation = await Conversation.findOne({
+                $and: [
+                    {
+                    participants: user._id,
+                    participants: body.MyId
+                    }
+                ]
+            });
+            if (!conversation) {
+                conversation = new Conversation({participants: [user.id, body.MyId]});
+                await conversation.save();
+            }
+            const response = {user,conversation};
+            res.send(response);
+        }     
     } catch (e) {
         console.log('error',e);
         
-        res.status(400).send(e)
+        res.send(`error: ${e.message}`)
     }
 });
 
@@ -145,7 +127,7 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
 
     res.send(post._id);
 }, (error,req,res,next) => {
-    res.status(400).send({error: error.message});
+    res.send(`error: ${error.message}`);
 });
 
 //Find post and update post status
@@ -153,14 +135,19 @@ app.post ('/find-post', async (req, res) => {
     try {
         const {postId, recipientId} = req.body;
         const post = await Post.findById(postId);
-        if (recipientId === post.recipientId) {
-            post.updateOne({status: 'received'});
+        if (!post) {
+            res.send('error: post not found');
+        } else {
+            if (recipientId === post.recipientId) {
+                post.updateOne({status: 'received'});
+            }
+            res.set('Content-Type', 'application/octet-stream');
+            res.send(post.recording);
         }
-        res.set('Content-Type', 'application/octet-stream');
-        res.send(post.recording);
+        
     } catch (e) {
         console.log('error: ',e);
-        res.status(400).send({e});
+        res.send(`error: ${e.message}`);
     }
 });
 
@@ -189,7 +176,7 @@ app.post('/post-status',async (req, res) => {
         );
         res.send();
     } catch (e) {
-        res.status(400).send({e});
+        res.send(`error: ${e.message}`);
     }
     
 });
