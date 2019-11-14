@@ -5,7 +5,8 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minlength: 1
+        minlength: 1,
+        unique: true
     },
     name: {
         type: String,
@@ -16,8 +17,7 @@ const UserSchema = new mongoose.Schema({
     phoneNum: {
         type: String,
         trim: true,
-        minlength: 1,
-        unique: true
+        minlength: 1  
     }
 });
 
