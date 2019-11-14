@@ -46,7 +46,8 @@ app.post('/signup',async (req,res) =>{
         await user.save();
         res.send(user);
     } catch (e) {
-        res.send(JSON.stringify(e));
+        const {errmsg: errmsg = 'error'} = e;
+        res.send(JSON.stringify({errmsg}));
     }
 });
 
@@ -76,9 +77,9 @@ app.post('/find-user',async (req,res) => {
             res.send(response);
         }     
     } catch (e) {
-        console.log('****',e.errmsg);
         
-        res.send(JSON.stringify(e))
+        const {errmsg: errmsg = 'error'} = e;
+        res.send(JSON.stringify({errmsg}));
     }
 });
 
@@ -126,8 +127,8 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
     res.send(post._id);
 }, (error,req,res,next) => {
     if (error) {console.log('/post error',error)};
-    
-    res.send(JSON.stringify(e));
+    const {errmsg: errmsg = 'error'} = error;
+        res.send(JSON.stringify({errmsg}));
 });
 
 //Find post and update post status
@@ -150,8 +151,8 @@ app.post ('/find-post', async (req, res) => {
             res.send(post.recording);
         }   
     } catch (e) {
-        console.log('error: ',e);
-        res.send(JSON.stringify(e));
+        const {errmsg: errmsg = 'error'} = e;
+        res.send(JSON.stringify({errmsg}));
     }
 });
 
@@ -180,7 +181,8 @@ app.post('/post-status',async (req, res) => {
         );
         res.send();
     } catch (e) {
-        res.send(JSON.stringify(e));
+        const {errmsg: errmsg = 'error'} = e;
+        res.send(JSON.stringify({errmsg}));
     }
     
 });
