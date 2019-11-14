@@ -59,7 +59,8 @@ app.post('/find-user',async (req,res) => {
             phoneNum: body.phoneNum
         });
         if (!user) {
-            res.send('error: user not found');
+            throw new Error('user not found');
+            //res.send('error: user not found');
         } else {
             let conversation = await Conversation.findOne({
                 $and: [
@@ -77,6 +78,7 @@ app.post('/find-user',async (req,res) => {
             res.send(response);
         }     
     } catch (e) {
+        console.log('$%$%$%', e);
         
         const {errmsg: errmsg = 'error'} = e;
         res.send(JSON.stringify({errmsg}));
@@ -124,7 +126,7 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
         }
     );
 
-    res.send(post._id);
+    res.send({postId: post._id});
 }, (error,req,res,next) => {
     if (error) {console.log('/post error',error)};
     const {errmsg: errmsg = 'error'} = error;
