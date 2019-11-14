@@ -1,6 +1,6 @@
-var {mongoose} = require('../db/mongoose.js');
+const {mongoose} = require('../db/mongoose.js');
 
-var UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     deviceId: {
         type: String,
         required: true,

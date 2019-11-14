@@ -41,14 +41,12 @@ app.use(bodyParser.json());
 //SIGN UP
 app.post('/signup',async (req,res) =>{
     try {
-        console.log('enter signup');
         const body = _.pick(req.body, ['name','deviceId','phoneNum']);
         const user = new User(body);
         await user.save();
         res.send(user);
     } catch (e) {
-        console.log('error',e);
-        res.send(`error: ${e.message}`);
+        res.send(JSON.stringify(e));
     }
 });
 
@@ -60,36 +58,36 @@ app.post('/find-user',async (req,res) => {
             phoneNum: body.phoneNum
         });
         if (!user) {
-            console.log('user not found');
             res.send('error: user not found');
         } else {
             let conversation = await Conversation.findOne({
                 $and: [
-                    {
-                    participants: user._id,
-                    participants: body.MyId
-                    }
+                    {participants: user._id},
+                    {participants: body.MyId}
                 ]
             });
             if (!conversation) {
+                
                 conversation = new Conversation({participants: [user.id, body.MyId]});
                 await conversation.save();
+                
             }
             const response = {user,conversation};
             res.send(response);
         }     
     } catch (e) {
-        console.log('error',e);
+        console.log('****',e.errmsg);
         
-        res.send(`error: ${e.message}`)
+        res.send(JSON.stringify(e))
     }
 });
 
 //UPLOAD recording '.wav' message file and send notification to recipient
 app.post('/post', upload.single('recording'), async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
+    
     const {conversationId,senderId, senderPhoneNum,recepientDevId,senderName, recipientId} = req.body;
     const recording = req.file.buffer;
-
+    
     const post = new Post({
         conversationId,
         time: new Date,
@@ -97,7 +95,7 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
         recording,
         recipientId
     });
-
+    
     await post.save();
     
     const message = new gcm.Message({
@@ -116,7 +114,7 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
     const regTokens = [recepientDevId];
     
     sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-        if (err) console.error('push error',err);
+        if (err) console.error('push notification error',err);
         else if (response.success === 1) 
             {
                 post.updateOne({status: 'received'});
@@ -127,7 +125,9 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
 
     res.send(post._id);
 }, (error,req,res,next) => {
-    res.send(`error: ${error.message}`);
+    if (error) {console.log('/post error',error)};
+    
+    res.send(JSON.stringify(e));
 });
 
 //Find post and update post status
@@ -135,23 +135,27 @@ app.post ('/find-post', async (req, res) => {
     try {
         const {postId, recipientId} = req.body;
         const post = await Post.findById(postId);
+        
         if (!post) {
             res.send('error: post not found');
         } else {
             if (recipientId === post.recipientId) {
-                post.updateOne({status: 'received'});
+                try {
+                    await post.update({status: 'received'});
+                } catch (e) {
+                    console.log('find-post error', e);
+                }
             }
             res.set('Content-Type', 'application/octet-stream');
             res.send(post.recording);
-        }
-        
+        }   
     } catch (e) {
         console.log('error: ',e);
-        res.send(`error: ${e.message}`);
+        res.send(JSON.stringify(e));
     }
 });
 
-//RCV the post status from recipient, update status and send notification to server
+//recipient of a post update the post status, server send notification to the post sender
 app.post('/post-status',async (req, res) => {
     try {
         const {postId, recipientId, status} = req.body;
@@ -176,7 +180,7 @@ app.post('/post-status',async (req, res) => {
         );
         res.send();
     } catch (e) {
-        res.send(`error: ${e.message}`);
+        res.send(JSON.stringify(e));
     }
     
 });
@@ -185,4 +189,4 @@ app.listen(port,() =>{
     console.log(`Started up at port ${port}`);
 });
 
-module.exports = {app};
+module.exports = {app, sender};
