@@ -107,11 +107,11 @@ app.post('/post', upload.single('recording'), async (req, res) => { //telling 'm
             senderId: senderId,
             senderPhoneNum: senderPhoneNum,
             senderName:senderName
-            },
-        notification: {
-            title: "handsoff",
-            body: "notification on voice post for you"
-        }
+            }
+        // notification: {
+        //     title: "handsoff",
+        //     body: "notification on voice post for you"
+        // }
     });
     
     const regTokens = [recepientDevId];
@@ -169,11 +169,11 @@ app.post('/post-status',async (req, res) => {
             data: { 
                 postId:  post._id,
                 recipientId: post.recipientId
-                },
-            notification: {
-                title: "handsoff",
-                body: "message you sent, has been played by recipient"
-            }
+                }
+            // notification: {
+            //     title: "handsoff",
+            //     body: "message you sent, has been played by recipient"
+            // }
         });
     
         sender.send(message, { registrationTokens: regTokens }, function (err, response) {
