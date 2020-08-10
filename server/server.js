@@ -47,6 +47,10 @@ app.post('/signup',async (req,res) =>{
         res.send(user);
     } catch (e) {
         const {errmsg: errmsg = 'error'} = e;
+        console.log('signup error object', e);
+        console.log('sighnup errmsg', {errmsg});
+        
+        
         res.send(JSON.stringify({errmsg}));
     }
 });
@@ -78,10 +82,9 @@ app.post('/find-user',async (req,res) => {
             res.send(response);
         }     
     } catch (e) {
-        console.log('$%$%$%', e);
+        const error = {errmsg: `${e.message}`};
         
-        const {errmsg: errmsg = 'error'} = e;
-        res.send(JSON.stringify({errmsg}));
+        res.send(JSON.stringify(error));
     }
 });
 
