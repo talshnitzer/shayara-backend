@@ -1,10 +1,7 @@
 const mongoose = require('mongoose')
 
-var PostSchema = new mongoose.Schema({
-        conversationId: {
-            type: String,
-            required: true
-        },
+var MessageSchema = new mongoose.Schema({
+        
         time: {
             type: [Date]
         },
@@ -19,13 +16,11 @@ var PostSchema = new mongoose.Schema({
         recording: {
             type: Buffer,
             required: true
-        },
-        status: {
-            type: String,
-            default: 'sent'
         }
+},{
+    timestamps: true
 });
 
-const Post = mongoose.model('Post', PostSchema);
+const Message = mongoose.model('Message', MessageSchema);
 
-module.exports = {Post};
+module.exports = {Message};
