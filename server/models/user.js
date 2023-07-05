@@ -19,14 +19,18 @@ const userSchema = new mongoose.Schema({
     },
     deviceId: {
         type: String,
-        trim: true,
-        unique: true
+        trim: true
     },    
     role: {
         type: [String],
-        enum: ['superAdmin', 'shayaraAdmin','first','video','drone','last'],
-        trim: true
+        enum: ['superAdmin', 'shayaraAdmin','first','video','drone','last','driver'],
+        trim: true,
+        default: 'driver'
     },
+    location: {
+        type: { type: String, default: 'Point' },
+        coordinates: [Number]
+       }   ,
     shayara: {
         type: mongoose.Schema.Types.ObjectId,
         requires: true,
