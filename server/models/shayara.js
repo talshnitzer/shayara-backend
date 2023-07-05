@@ -11,10 +11,6 @@ const ShayaraSchema = new mongoose.Schema({
         requires: true,
         ref: 'User'
     },
-    participants: {
-        type: [mongoose.Schema.Types.ObjectId],
-            ref: 'User'
-    },
     shayaraLocationName: {
         type: String
     },
@@ -32,12 +28,7 @@ const ShayaraSchema = new mongoose.Schema({
             const endDate = new Date
              return endDate.setTime(this.eventStart.getTime() + 10*60*60*1000)
          }
-    },
-    participantsNum: {
-    type: Number,
-    default: 0,
-    //set: function() { return this.participants.length }
-}
+    }
 
 }, {
     timestamps: true

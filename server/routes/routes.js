@@ -37,9 +37,9 @@ const userOutputFields =
 router.post('/admin/login', async (req, res) => {
     try {
         const email = _.pick(req.body, ["email"]);
-        console.log('@@@ admin LOGIN 1 email', email)
+        //console.log('@@@ admin LOGIN 1 email', email)
         const user = await User.findOne(email);
-        console.log('@@@ admin LOGIN 2 user', user)
+        //console.log('@@@ admin LOGIN 2 user', user)
         if (!user) {
             throw new Error('user not found')
         }
@@ -95,14 +95,7 @@ router.post(
                 throw new Error('user not found')
             }
 
-           const deviceIdExist =  await User.exists({deviceId: body.deviceId})
-
-           console.log('@@@  UPDATE my user details, deviceId, deviceIdExist', body.deviceId, deviceIdExist)
-
-           if (deviceIdExist) {
-            throw new Error('user already exist')
-            }
-
+           
             if (body.name) user.name = body.name;
             if (body.location) user.location = body.location;
             if (body.phone) user.phone = body.phone;
@@ -128,7 +121,7 @@ router.post(
 router.post("/user/login/:shayaraId", async (req, res) => {
     try {
 
-        let shyara = await Shayara.findById(req.params.id);
+        let shyara = await Shayara.findById(req.params.shayaraId);
         if (!shyara) {
             throw new Error('shyara not found')
         }
@@ -136,13 +129,7 @@ router.post("/user/login/:shayaraId", async (req, res) => {
         let body = _.pick(req.body,
             ["name" , 'deviceId', 'phone']);
 
-        const deviceIdExist =  User.find({deviceId: body.deviceId})
-
-        if (deviceIdExist) {
-                throw new Error('user already exist')
-            }
-
-        body.shayara = req.params.id;
+        body.shayara = req.params.shayaraId;
         const user = new User(body);
 
         const token = await user.generateAuthToken();
@@ -156,6 +143,55 @@ router.post("/user/login/:shayaraId", async (req, res) => {
 });
 
 //------------------------------------------------------------------//
+//create event 
+router.post(
+    "/shayara/create",
+    auth(['shayaraAdmin']),
+    async (req, res) => {
+        try {
+            
+            let body = _.pick(
+                req.body, 
+                ["shayaraName",  "shayaraLocationName", "startLocation", "startTime", "endTime"]
+                );
+
+            body.shayaraOwner = req.user._id
+            
+            const shayara = new Shayara(body);
+            // const isExist = await Shayara.find({
+            //     startTime: {
+            //         $gt: shayara.startTime.getTime() - 30*60*1000,
+            //         $lt: shayara.startTime.getTime() + 30*60*1000
+            //     },
+                
+            //     startLocation: {
+            //      $near: {
+            //       $maxDistance: 100,
+            //       $geometry: {
+            //        type: "Point",
+            //        coordinates: [shayara.startLocation.coordinates[0], shayara.startLocation.coordinates[1]]
+            //       }
+            //      }
+            //     }
+            //    }).find((error, results) => {
+            //     if (error) console.log(error);
+            //     console.log(JSON.stringify(results, 0, 2));
+            //    });
+            
+            //    if (isExist.length !== 0) {
+            //     console.log('@@@@ isExist', isExist);
+            //     throw new Error('Shayara already exist')
+            // }
+
+            await shayara.save();
+            res.send({ shayaraId: shayara._id });
+        } catch (e) {
+            res.status(200).send(error(e.message));
+        }
+    });
+
+
+
 //GET all users
 router.get(
     "/admin/allUsers/:shyaraId",
