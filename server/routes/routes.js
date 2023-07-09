@@ -249,75 +249,88 @@ router.post(
 
 
 //UPLOAD recording '.wav' message file and send notification to recipient
-router.post('/post', upload.single('recording'), async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
+router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording'), async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
     
     const {senderId, senderPhoneNum,recepientDevId,senderName, recipientId} = req.body;
-    const recording = req.file.buffer;
-    
+
+    console.log('@@@ /post senderId: ', senderId);
+     const recording = req.file.buffer;
+    const user = req.user
+    const recepient = User.findOne({deviceId: recepientDevId})
+
+     if (!recipientId) {
+        if (user.role === 'shayaraAdmin') {
+            post.recipientId = User.find({shayara: user.shayara})
+        } else {
+            throw new Error('no recepient id')
+        }
+     }
+
+     if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
+        throw new Error('messages can be sent only to admin')
+     }
+
     const post = new Post({
         time: new Date,
         senderId,
         recording,
         recipientId
     });
+
+
     
     await post.save();
     
-    const message = new gcm.Message({
-        data: { 
-            postId:  post._id,
-            senderId: senderId,
-            senderPhoneNum: senderPhoneNum,
-            senderName:senderName
-            }
-        // notification: {
-        //     title: "handsoff",
-        //     body: "notification on voice post for you"
-        // }
-    });
+    // const message = new gcm.Message({
+    //     data: { 
+    //         postId:  post._id,
+    //         senderId: senderId,
+    //         senderPhoneNum: senderPhoneNum,
+    //         senderName:senderName
+    //         }
+    //     // notification: {
+    //     //     title: "handsoff",
+    //     //     body: "notification on voice post for you"
+    //     // }
+    // });
     
-    const regTokens = [recepientDevId];
+    // const regTokens = [recepientDevId];
     
-    sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-        if (err) console.error('push notification error',err);
-        else if (response.success === 1) 
-            {
-                //post.updateOne({status: 'received'});
-                console.log(response);
-            }
-        }
-    );
+    // sender.send(message, { registrationTokens: regTokens }, function (err, response) {
+    //     if (err) console.error('push notification error',err);
+    //     else if (response.success === 1) 
+    //         {
+    //             //post.updateOne({status: 'received'});
+    //             console.log(response);
+    //         }
+    //     }
+    // );
 
     res.send({postId: post._id});
+   
 }, (error,req,res,next) => {
     if (error) {console.log('/post error',error)};
     const {errmsg: errmsg = 'error'} = error;
         res.send(JSON.stringify({errmsg}));
 });
 
-//Find post and update post status
-// app.post ('/find-post', async (req, res) => {
-//     try {
-//         const {postId, recipientId} = req.body;
-//         const post = await Post.findById(postId);
+//GET recording
+router.get ('/getRecord/:postId', async (req, res) => {
+    try {
+        const postId = req.params.postId;
+        const post = await Post.findById(postId);
         
-//         if (!post) {
-//             res.send('error: post not found');
-//         } else {
-//             if (recipientId === post.recipientId) {
-//                 try {
-//                     await post.update({status: 'received'});
-//                 } catch (e) {
-//                     console.log('find-post error', e);
-//                 }
-//             }
-//             res.set('Content-Type', 'application/octet-stream');
-//             res.send(post.recording);
-//         }   
-//     } catch (e) {
-//         const {errmsg: errmsg = 'error'} = e;
-//         res.send(JSON.stringify({errmsg}));
-//     }
-// });
+        if (!post) {
+            res.send('error: post not found');
+        } 
+            
+            res.set('Content-Type', 'application/octet-stream');
+            res.send(post.recording);
+         
+    } catch (e) {
+        const {errmsg: errmsg = 'error'} = e;
+        res.send(JSON.stringify({errmsg}));
+    }
+});
 
 module.exports = router
