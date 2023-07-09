@@ -247,7 +247,9 @@ router.post(
                         throw new Error('convoy not found')
                     }
 
-                const isOwner = shayara.shayaraOwner === req.user._id
+                    console.log("@@@  /shayara/update/:shayaraId  shayara.shayaraOwner , req.user._id", shayara.shayaraOwner, req.user._id);
+
+                const isOwner = toString(shayara.shayaraOwner) === toString(req.user._id)
 
                 if (!isOwner) {
                     throw new Error('user is not convoy owner')
@@ -255,8 +257,8 @@ router.post(
 
                 if (body.shayaraName) shayara.shayaraName = body.shayaraName;
                 if (body.shayaraLocationName) shayara.shayaraLocationName = body.shayaraLocationName;
-                if (body.startLocation) shayara.startLocation = body.startLocation;
-                if (body.startTime) shayara.startTime = body.shayaraName;
+                if (body.startLocation) shayara.startLocation.coordinates = body.startLocation.coordinates;
+                if (body.startTime) shayara.startTime = body.startTime;
                 if (body.endTime) shayara.endTime = body.endTime; 
                 
                 await shayara.save();
@@ -269,7 +271,7 @@ router.post(
     //GET all shayara
 router.get(
     "/shayara/getAll",
-    auth(['shyaraAdmin']),
+    auth(['shayaraAdmin']),
     async (req, res) => {
         try {
             const allShayarasDocs = await Shayara.find({shayaraOwner: req.user._id});
@@ -285,15 +287,18 @@ router.get(
     //Remove my Shayara
 router.get(
     "/shayara/remove",
-    auth(['shyaraAdmin']),
+    auth(['shayaraAdmin']),
     async (req, res) => {
         try {
-            const shayara = await Shayara.findByIdAndRemove(req.user._id)
+
+
+            const shayara = await Shayara.findOne({shayaraOwner: req.user._id})
 
             if (!shayara) {
                 throw new Error('Convoy not found')
             }
 
+            await shayara.remove()
             res.send(shayara);
            
         } catch (e) {
