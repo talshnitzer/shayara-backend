@@ -114,6 +114,41 @@ router.post(
     }
 );
 
+//UPDATE user role by admin 
+router.post(
+    "/admin/updateRole/:id",
+    auth(['shayaraAdmin']),
+    async (req, res) => {
+        try {
+            const body = _.pick(req.body,
+                ["role"]);
+            let user = await User.findById(req.params.id);
+
+            if (!user) {
+                throw new Error('user not found')
+            }
+
+           const deviceIdExist =  User.find({deviceId: body.deviceId})
+
+           if (deviceIdExist) {
+            throw new Error('user already exist')
+            }
+
+            if (body.name) user.name = body.name;
+            if (body.phone) user.phone = body.phone;
+            if (body.deviceId) user.deviceId = body.deviceId ;
+
+            await user.save();
+
+            res.send(
+                _.pick(user, userOutputFields)
+            );
+        } catch (e) {
+            res.status(200).send(error(e.message));
+        }
+    }
+);
+
 //user login to specific shayara
 //server find the shayara and create token to user
 //LOGIN
@@ -143,7 +178,8 @@ router.post("/user/login/:shayaraId", async (req, res) => {
 });
 
 //------------------------------------------------------------------//
-//create event 
+//---------------------Shayara Routes--------------------------------//
+//create shayara 
 router.post(
     "/shayara/create",
     auth(['shayaraAdmin']),
@@ -184,6 +220,9 @@ router.post(
             // }
 
             await shayara.save();
+
+            await User.findByIdAndUpdate(req.user._id, {shayara: shayara._id})
+            
             res.send({ shayaraId: shayara._id });
         } catch (e) {
             res.status(200).send(error(e.message));
@@ -191,11 +230,86 @@ router.post(
     });
 
 
+    router.post(
+        "/shayara/update/:shayaraId",
+        auth(['shayaraAdmin']),
+        async (req, res) => {
+            try {
+                
+                let body = _.pick(
+                    req.body, 
+                    ["shayaraName",  "shayaraLocationName", "startLocation", "startTime", "endTime"]
+                    );
+                
+                let shayara = await Shayara.findById(req.params.shayaraId)
+    
+                if (!shayara) {
+                        throw new Error('convoy not found')
+                    }
+
+                const isOwner = shayara.shayaraOwner === req.user._id
+
+                if (!isOwner) {
+                    throw new Error('user is not convoy owner')
+                }
+
+                if (body.shayaraName) shayara.shayaraName = body.shayaraName;
+                if (body.shayaraLocationName) shayara.shayaraLocationName = body.shayaraLocationName;
+                if (body.startLocation) shayara.startLocation = body.startLocation;
+                if (body.startTime) shayara.startTime = body.shayaraName;
+                if (body.endTime) shayara.endTime = body.endTime; 
+                
+                await shayara.save();
+                res.send(shayara);
+            } catch (e) {
+                res.status(200).send(error(e.message));
+            }
+        });
+
+    //GET all shayara
+router.get(
+    "/shayara/getAll",
+    auth(['shyaraAdmin']),
+    async (req, res) => {
+        try {
+            const allShayarasDocs = await Shayara.find({shayaraOwner: req.user._id});
+            if (!allShayarasDocs) {
+                throw new Error("No convoyes found");
+            }
+            res.send({ allShayarasDocs });
+        } catch (e) {
+            res.status(200).send(error(e.message));
+        }
+    });
+
+    //Remove my Shayara
+router.get(
+    "/shayara/remove",
+    auth(['shyaraAdmin']),
+    async (req, res) => {
+        try {
+            const shayara = await Shayara.findByIdAndRemove(req.user._id)
+
+            if (!shayara) {
+                throw new Error('Convoy not found')
+            }
+
+            res.send(shayara);
+           
+        } catch (e) {
+            res.status(200).send(error(e.message));
+        }
+    }
+)
+
+    //
+
+//----------------------User routes---------------------------------//
 
 //GET all users
 router.get(
     "/admin/allUsers/:shyaraId",
-    auth(['superAdmin']),
+    auth(['shayaraAdmin']),
     async (req, res) => {
         try {
             const allUsersDocs = await User.find(
@@ -212,41 +326,34 @@ router.get(
         }
     });
 
-    //UPDATE user role by admin 
-router.post(
-    "/user/update/:id",
-    auth(['shayaraAdmin']),
+    
+    //Remove driver
+router.get(
+    "/user/remove/:id",
+    auth(['shyaraAdmin']),
     async (req, res) => {
         try {
-            const body = _.pick(req.body,
-                ["role"]);
-            let user = await User.findById(req.params.id);
+            const driver = await findById(req.params.id)
 
-            if (!user) {
-                throw new Error('user not found')
+            const isOwner = req.user.shayara === driver.shayara
+
+            if (!isOwner) {
+                throw new Error('user is not the admin of the driver')
             }
 
-           const deviceIdExist =  User.find({deviceId: body.deviceId})
+            await User.deleteOne({id: req.params.id})
 
-           if (deviceIdExist) {
-            throw new Error('user already exist')
-            }
-
-            if (body.name) user.name = body.name;
-            if (body.phone) user.phone = body.phone;
-            if (body.deviceId) user.deviceId = body.deviceId ;
-
-            await user.save();
-
-            res.send(
-                _.pick(user, userOutputFields)
-            );
+            res.send(driver);
+           
         } catch (e) {
             res.status(200).send(error(e.message));
         }
     }
-);
+)
 
+
+
+    //---------------------Recording Routes---------------------------------------//
 
 //UPLOAD recording '.wav' message file and send notification to recipient
 router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording'), async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 

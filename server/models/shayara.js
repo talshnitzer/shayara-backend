@@ -34,10 +34,7 @@ const ShayaraSchema = new mongoose.Schema({
     timestamps: true
 })
 
-ShayaraSchema.pre(['save'], function (next){
-    this.participantsNum = this.participants.length
-    return next()
-})
+
 
 ShayaraSchema.index({startLocation: '2dsphere'})
 
