@@ -128,15 +128,7 @@ router.post(
                 throw new Error('user not found')
             }
 
-           const deviceIdExist =  User.find({deviceId: body.deviceId})
-
-           if (deviceIdExist) {
-            throw new Error('user already exist')
-            }
-
-            if (body.name) user.name = body.name;
-            if (body.phone) user.phone = body.phone;
-            if (body.deviceId) user.deviceId = body.deviceId ;
+            if (body.role) user.role = body.role;
 
             await user.save();
 
@@ -173,7 +165,7 @@ router.post("/user/login/:shayaraId", async (req, res) => {
             send(_.pick(user, userOutputFields));
 
     } catch (e) {
-        res.status(200).send(error(e));
+        res.status(200).send(error(e.message));
     }
 });
 
@@ -335,18 +327,20 @@ router.get(
     //Remove driver
 router.get(
     "/user/remove/:id",
-    auth(['shyaraAdmin']),
+    auth(['shayaraAdmin']),
     async (req, res) => {
         try {
-            const driver = await findById(req.params.id)
+            const driver = await User.findById(req.params.id)
 
-            const isOwner = req.user.shayara === driver.shayara
+            const isOwner = toString(req.user.shayara)  === toString(driver.shayara) 
 
             if (!isOwner) {
                 throw new Error('user is not the admin of the driver')
             }
 
-            await User.deleteOne({id: req.params.id})
+            await driver.remove()
+
+            //await User.deleteOne({id: req.params.id})
 
             res.send(driver);
            

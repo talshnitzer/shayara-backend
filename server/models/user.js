@@ -6,7 +6,12 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         unique: true,
-        lowercase: true
+        lowercase: true,
+        default: function(){
+            const emailName = (Math.random() + 1).toString(36).substring(7);
+            const emailAddress = (Math.random() + 1).toString(36).substring(7);
+             return `${emailName}@${emailAddress}.com`
+        }
     },
     name: {
         type: String,
@@ -94,11 +99,11 @@ userSchema.statics.findByToken = function (token, userTypes) {
 };
 
 
-userSchema.post("save", function (error, doc, next) {
-    if (error.name === "MongoError" && error.code === 11000)
-        next(new Error("This user name already exist"));
-    else next(error);
-});
+// userSchema.post("save", function (error, doc, next) {
+//     if (error.name === "MongoError" && error.code === 11000)
+//         next(new Error("This user name already exist"));
+//     else next(error);
+// });
 
 const User = mongoose.model('User', userSchema)
 module.exports = { User }
