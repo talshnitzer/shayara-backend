@@ -156,8 +156,15 @@ router.post("/user/login/:shayaraId", async (req, res) => {
         let body = _.pick(req.body,
             ["name" , 'deviceId', 'phone']);
 
+        let user = await User.findOne({deviceId: body.deviceId, shayara: shyara._id})
+
         body.shayara = req.params.shayaraId;
-        const user = new User(body);
+
+        if (!user) {
+            user = new User(body);
+            //user.save()
+        } 
+        
 
         const token = await user.generateAuthToken();
 
@@ -184,6 +191,12 @@ router.post(
                 );
 
             body.shayaraOwner = req.user._id
+
+            const isOwner = await Shayara.findOne({shayaraOwner: req.user._id})
+
+            if (isOwner) {
+                throw new Error('user can admin only 1 convoy')
+            }
             
             const shayara = new Shayara(body);
             // const isExist = await Shayara.find({
@@ -290,7 +303,10 @@ router.get(
                 throw new Error('Convoy not found')
             }
 
+            await User.deleteMany({shayara: shayara._id, role: {$ne: "shayaraAdmin"}})
+
             await shayara.remove()
+
             res.send(shayara);
            
         } catch (e) {

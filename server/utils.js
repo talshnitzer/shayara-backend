@@ -15,14 +15,14 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async (email, verifyLink, userName) => {
   try {
     let mailOptions = {
-      from: '"convois" <' + process.env.EMAIL_USER + ">",
+      from: '"Convoys" <' + process.env.EMAIL_USER + ">",
       to: email,
-      subject: "invitation to Convois app",
+      subject: "invitation to Convoys app",
       text: "invitation",
       html:
         `Dear ${userName} <br><br> please copy this code to the app signup page <br><br>` +
         `<b>${verifyLink}</b><br><br>` +
-        `Regards,<br><br>The Convois team`,
+        `Regards,<br><br>The Convoys team`,
     };
     const response = await transporter.sendMail(mailOptions);
     console.log('sendEmail response', response);
