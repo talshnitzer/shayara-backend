@@ -168,8 +168,14 @@ router.post("/user/login/:shayaraId", async (req, res) => {
 
         const token = await user.generateAuthToken();
 
+        const userOutput = _.pick(user, userOutputFields)
+        const shayaraOutput = _.pick(shyara, ["shayaraName","shayaraOwner", "shayaraLocationName", "startLocation", "startTime", "endTime"])
+        const output = {...userOutput, ...shayaraOutput}
+
+        console.log("@@@@ user login output", output);
+
         res.header("x-auth", token).
-            send(_.pick(user, userOutputFields));
+            send(output);
 
     } catch (e) {
         res.status(200).send(error(e.message));
@@ -279,11 +285,24 @@ router.get(
     auth(['shayaraAdmin']),
     async (req, res) => {
         try {
-            const allShayarasDocs = await Shayara.find({shayaraOwner: req.user._id});
-            if (!allShayarasDocs) {
+            let shayarasDoc = await Shayara.findOne({shayaraOwner: req.user._id});
+            
+            if (!shayarasDoc) {
                 throw new Error("No convoyes found");
             }
-            res.send({ allShayarasDocs });
+
+            const allUsersDocs = await User.find(
+                {shayara: shayarasDoc._id},
+                "email name  phone role location createdAt updatedAt"
+            ).exec();
+
+            console.log('@@@ allUsersDocs', allUsersDocs);
+
+            shayarasDoc = {shayarasDoc, drivers: allUsersDocs}
+
+            console.log('@@@ shayarasDoc', shayarasDoc);
+
+            res.send(shayarasDoc);
         } catch (e) {
             res.status(200).send(error(e.message));
         }
@@ -403,30 +422,30 @@ router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording')
     
     await post.save();
     
-    // const message = new gcm.Message({
-    //     data: { 
-    //         postId:  post._id,
-    //         senderId: senderId,
-    //         senderPhoneNum: senderPhoneNum,
-    //         senderName:senderName
-    //         }
-    //     // notification: {
-    //     //     title: "handsoff",
-    //     //     body: "notification on voice post for you"
-    //     // }
-    // });
+    const message = new gcm.Message({
+        data: { 
+            postId:  post._id,
+            senderId: senderId,
+            senderPhoneNum: senderPhoneNum,
+            senderName:senderName
+            }
+        // notification: {
+        //     title: "handsoff",
+        //     body: "notification on voice post for you"
+        // }
+    });
     
-    // const regTokens = [recepientDevId];
+    const regTokens = [recepientDevId];
     
-    // sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-    //     if (err) console.error('push notification error',err);
-    //     else if (response.success === 1) 
-    //         {
-    //             //post.updateOne({status: 'received'});
-    //             console.log(response);
-    //         }
-    //     }
-    // );
+    sender.send(message, { registrationTokens: regTokens }, function (err, response) {
+        if (err) console.error('push notification error',err);
+        else if (response.success === 1) 
+            {
+                //post.updateOne({status: 'received'});
+                console.log(response);
+            }
+        }
+    );
 
     res.send({postId: post._id});
    
