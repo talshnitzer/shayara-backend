@@ -390,12 +390,18 @@ router.get(
     //---------------------Recording Routes---------------------------------------//
 
 //UPLOAD recording '.wav' message file and send notification to recipient
-router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording'), async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
+router.post(
+    '/post',
+    auth(['shayaraAdmin', 'driver']),
+    upload.single('recording'), 
+    async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
     
     const {senderId, senderPhoneNum,recepientDevId,senderName, recipientId} = req.body;
 
     console.log('@@@ /post senderId: ', senderId);
+    console.log('@@@ /post req: ', req.file.buffer);
      const recording = req.file.buffer;
+     //const recording = []
     const user = req.user
     const recepient = User.findOne({deviceId: recepientDevId})
 
@@ -407,9 +413,9 @@ router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording')
         }
      }
 
-     if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
-        throw new Error('messages can be sent only to admin')
-     }
+    //  if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
+    //     throw new Error('messages can be sent only to admin')
+    //  }
 
     const post = new Post({
         time: new Date,
@@ -422,30 +428,30 @@ router.post('/post', auth(['shayaraAdmin', 'driver']),upload.single('recording')
     
     await post.save();
     
-    const message = new gcm.Message({
-        data: { 
-            postId:  post._id,
-            senderId: senderId,
-            senderPhoneNum: senderPhoneNum,
-            senderName:senderName
-            }
-        // notification: {
-        //     title: "handsoff",
-        //     body: "notification on voice post for you"
-        // }
-    });
+    // const message = new gcm.Message({
+    //     data: { 
+    //         postId:  post._id,
+    //         senderId: senderId,
+    //         senderPhoneNum: senderPhoneNum,
+    //         senderName:senderName
+    //         }
+    //     // notification: {
+    //     //     title: "handsoff",
+    //     //     body: "notification on voice post for you"
+    //     // }
+    // });
     
-    const regTokens = [recepientDevId];
+    // const regTokens = [recepientDevId];
     
-    sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-        if (err) console.error('push notification error',err);
-        else if (response.success === 1) 
-            {
-                //post.updateOne({status: 'received'});
-                console.log(response);
-            }
-        }
-    );
+    // sender.send(message, { registrationTokens: regTokens }, function (err, response) {
+    //     if (err) console.error('push notification error',err);
+    //     else if (response.success === 1) 
+    //         {
+    //             //post.updateOne({status: 'received'});
+    //             console.log(response);
+    //         }
+    //     }
+    // );
 
     res.send({postId: post._id});
    
