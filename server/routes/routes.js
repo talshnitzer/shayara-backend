@@ -148,15 +148,15 @@ router.post(
 router.post("/user/login/:shayaraId", async (req, res) => {
     try {
 
-        let shyara = await Shayara.findById(req.params.shayaraId);
-        if (!shyara) {
-            throw new Error('shyara not found')
+        let shayara = await Shayara.findById(req.params.shayaraId);
+        if (!shayara) {
+            throw new Error('shayara not found')
         }
         
         let body = _.pick(req.body,
             ["name" , 'deviceId', 'phone']);
 
-        let user = await User.findOne({deviceId: body.deviceId, shayara: shyara._id})
+        let user = await User.findOne({deviceId: body.deviceId, shayara: shayara._id})
 
         body.shayara = req.params.shayaraId;
 
@@ -169,7 +169,10 @@ router.post("/user/login/:shayaraId", async (req, res) => {
         const token = await user.generateAuthToken();
 
         const userOutput = _.pick(user, userOutputFields)
-        const shayaraOutput = _.pick(shyara, ["shayaraName","shayaraOwner", "shayaraLocationName", "startLocation", "startTime", "endTime"])
+        shayara.shayaraOwner = user
+        console.log('@@@ user/login/ shayara', shayara);
+        const shayaraOutput = _.pick(shayara, ["shayaraName","shayaraOwner", "shayaraLocationName", "startLocation", "startTime", "endTime"])
+        
         const output = {...userOutput, ...shayaraOutput}
 
         console.log("@@@@ user login output", output);
@@ -288,12 +291,12 @@ router.get(
             let shayarasDoc = await Shayara.findOne({shayaraOwner: req.user._id});
             
             if (!shayarasDoc) {
-                throw new Error("No convoyes found");
+                throw new Error("No convoys found");
             }
 
             const allUsersDocs = await User.find(
                 {shayara: shayarasDoc._id},
-                "email name  phone role location createdAt updatedAt"
+                "deviceId email name  phone role location createdAt updatedAt"
             ).exec();
 
             console.log('@@@ allUsersDocs', allUsersDocs);
