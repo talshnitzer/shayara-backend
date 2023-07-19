@@ -20,6 +20,7 @@ const upload = multer({});
 // Set up the sender with your GCM/FCM API key (declare this once for multiple messages)
 const sender = new gcm.Sender(process.env.FCM_SERVER_KEY);
 
+
 const userOutputFields =
     [
         "_id",
@@ -169,7 +170,7 @@ router.post("/user/login/:shayaraId", async (req, res) => {
         const token = await user.generateAuthToken();
 
         const userOutput = _.pick(user, userOutputFields)
-        shayara.shayaraOwner = user
+        
         console.log('@@@ user/login/ shayara', shayara);
         const shayaraOutput = _.pick(shayara, ["shayaraName","shayaraOwner", "shayaraLocationName", "startLocation", "startTime", "endTime"])
         
@@ -296,7 +297,7 @@ router.get(
 
             const allUsersDocs = await User.find(
                 {shayara: shayarasDoc._id},
-                "deviceId email name  phone role location createdAt updatedAt"
+                "_id name  phone role"
             ).exec();
 
             console.log('@@@ allUsersDocs', allUsersDocs);
@@ -341,21 +342,21 @@ router.get(
 
 //----------------------User routes---------------------------------//
 
-//GET all users
+//GET user
 router.get(
-    "/admin/allUsers/:shyaraId",
+    "/admin/getUserDetails/:_id",
     auth(['shayaraAdmin']),
     async (req, res) => {
         try {
-            const allUsersDocs = await User.find(
-                {shayara: req.params.shyaraId},
-                "email name  phone role location createdAt updatedAt"
+            const user = await User.findById(
+                 req.params._id,
+                "email name  phone role location"
             ).exec();
-            if (!allUsersDocs) {
-                throw new Error("6");
+            if (!user) {
+                throw new Error("user not found");
             }
 
-            res.send({ allUsersDocs });
+            res.send(user);
         } catch (e) {
             res.status(200).send(error(e.message));
         }
@@ -399,23 +400,27 @@ router.post(
     upload.single('recording'), 
     async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
     
-    const {senderId, senderPhoneNum,recepientDevId,senderName, recipientId} = req.body;
+    const { senderId, senderName, recipientId} = req.body;
 
-    console.log('@@@ /post senderId: ', senderId);
-    console.log('@@@ /post req: ', req.file.buffer);
+    //console.log('@@@ /post senderId: ', senderId);
+    //console.log('@@@ /post req: ', req.file.buffer);
      const recording = req.file.buffer;
-     //const recording = []
+    
     const user = req.user
-    const recepient = User.findOne({deviceId: recepientDevId})
+    
+    let {deviceId} = await User.findById(recipientId, "deviceId")
+    let  {deviceId: multDeviceId} = await User.find({shayara: user.shayara}, "deviceId")
+
+    console.log('@@@ /post multDeviceId: ', multDeviceId);
+    console.log('@@@ /post deviceId: ', deviceId);
 
      if (!recipientId) {
-        if (user.role === 'shayaraAdmin') {
-            post.recipientId = User.find({shayara: user.shayara})
-        } else {
+        if (user.role !== 'shayaraAdmin') {
             throw new Error('no recepient id')
-        }
-     }
-
+        } 
+    }
+     
+console.log('@@@ /post deviceId: ', deviceId);
     //  if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
     //     throw new Error('messages can be sent only to admin')
     //  }
@@ -431,30 +436,34 @@ router.post(
     
     await post.save();
     
-    // const message = new gcm.Message({
-    //     data: { 
-    //         postId:  post._id,
-    //         senderId: senderId,
-    //         senderPhoneNum: senderPhoneNum,
-    //         senderName:senderName
-    //         }
-    //     // notification: {
-    //     //     title: "handsoff",
-    //     //     body: "notification on voice post for you"
-    //     // }
-    // });
+    const message = new gcm.Message({
+        data: { 
+            postId:  post._id,
+            senderId: senderId,
+            senderName:senderName
+            }
+        // notification: {
+        //     title: "handsoff",
+        //     body: "notification on voice post for you"
+        // }
+    });
     
-    // const regTokens = [recepientDevId];
+console.log('@@@@@@ /post message: ', message);
+
+    const registrationIds = [deviceId];
+
+    //console.log('@@@@@@ /post regTokens: ', regTokens);
     
-    // sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-    //     if (err) console.error('push notification error',err);
-    //     else if (response.success === 1) 
-    //         {
-    //             //post.updateOne({status: 'received'});
-    //             console.log(response);
-    //         }
-    //     }
-    // );
+    sender.send(message, registrationIds, 1, function (err, response) {
+       
+        if (err) console.error('push notification error',err);
+        else if (response.success === 1) 
+            {
+                //post.updateOne({status: 'received'});
+                console.log('notification response',response);
+            }
+        }
+    );
 
     res.send({postId: post._id});
    
