@@ -348,8 +348,8 @@ router.get(
     auth(['shayaraAdmin']),
     async (req, res) => {
         try {
-            const user = await User.findById(
-                 req.params._id,
+            const user = await User.findOne(
+                 {_id: req.params._id, shayara: req.user.shayara},
                 "email name  phone role location"
             ).exec();
             if (!user) {
@@ -409,10 +409,12 @@ router.post(
     const user = req.user
     
     let {deviceId} = await User.findById(recipientId, "deviceId")
-    let  {deviceId: multDeviceId} = await User.find({shayara: user.shayara}, "deviceId")
+    //let  {deviceId: multDeviceId} = await User.find({shayara: user.shayara}, "deviceId")
+    let  result = await User.find({shayara: user.shayara}, "deviceId")
+    let multDeviceId = result.map(a => a.deviceId)
 
-    console.log('@@@ /post multDeviceId: ', multDeviceId);
-    console.log('@@@ /post deviceId: ', deviceId);
+    //console.log('@@@ /post multDeviceId: ', multDeviceId);
+    //console.log('@@@ /post deviceId: ', deviceId);
 
      if (!recipientId) {
         if (user.role !== 'shayaraAdmin') {
@@ -420,7 +422,7 @@ router.post(
         } 
     }
      
-console.log('@@@ /post deviceId: ', deviceId);
+//console.log('@@@ /post deviceId: ', deviceId);
     //  if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
     //     throw new Error('messages can be sent only to admin')
     //  }
@@ -437,25 +439,57 @@ console.log('@@@ /post deviceId: ', deviceId);
     await post.save();
     
     const message = new gcm.Message({
-        data: { 
-            postId:  post._id,
-            senderId: senderId,
-            senderName:senderName
+        "notification":
+		{
+            //"android":{},
+            title: "Shayarot",
+            body : {
+                postId:  post._id,
+                senderId: senderId,
+                senderName:senderName
             }
-        // notification: {
-        //     title: "handsoff",
-        //     body: "notification on voice post for you"
-        // }
+            
+			 
+			
+			// "body":"shimon has a nice body",
+			
+			// "title":"and bubik is his title"
+		},
+	
+	//"sentTime":1689945874618,
+	
+	"data":{
+        postId:  post._id,
+        senderId: senderId,
+        senderName:senderName
+    },
+	
+	//"from":"951676142489",
+	
+	//"messageId":"0:1689945874625822%a120975fa120975f",
+	
+	//"ttl":2419200,
+	
+	//"collapseKey":"com.shsh.android.convoys"
+        // data: { 
+        //     postId:  post._id,
+        //     senderId: senderId,
+        //     senderName:senderName
+        //     }
+        // // notification: {
+        // //     title: "handsoff",
+        // //     body: "notification on voice post for you"
+        // // }
     });
     
-console.log('@@@@@@ /post message: ', message);
+//console.log('@@@@@@ /post message: ', message);
 
-    const registrationIds = [deviceId];
+    const registrationIds = !recipientId ? multDeviceId : [deviceId];
 
-    //console.log('@@@@@@ /post regTokens: ', regTokens);
+    console.log('@@@@@@ /post registrationIds: ', registrationIds);
     
-    sender.send(message, registrationIds, 1, function (err, response) {
-       
+    sender.send(message, {registrationIds: registrationIds}, function (err, response) {
+       console.log('@@@ sender.send');
         if (err) console.error('push notification error',err);
         else if (response.success === 1) 
             {
