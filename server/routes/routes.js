@@ -442,12 +442,8 @@ router.post(
         "notification":
 		{
             //"android":{},
-            title: "Shayarot",
-            body : {
-                postId:  post._id,
-                senderId: senderId,
-                senderName:senderName
-            }
+            title: "Convoys",
+            body : 'You have a new voice message'
             
 			 
 			
