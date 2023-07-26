@@ -90,7 +90,7 @@ router.post(
                 ["name" , 'deviceId', 'phone', 'location']);
             let user = await User.findById(req.user._id);
 
-            console.log('@@@  UPDATE my user details, user', user)
+            //console.log('@@@  UPDATE my user details, user', user)
 
             if (!user) {
                 throw new Error('user not found')
@@ -171,12 +171,12 @@ router.post("/user/login/:shayaraId", async (req, res) => {
 
         const userOutput = _.pick(user, userOutputFields)
         
-        console.log('@@@ user/login/ shayara', shayara);
+        //console.log('@@@ user/login/ shayara', shayara);
         const shayaraOutput = _.pick(shayara, ["shayaraName","shayaraOwner", "shayaraLocationName", "startLocation", "startTime", "endTime"])
         
         const output = {...userOutput, ...shayaraOutput}
 
-        console.log("@@@@ user login output", output);
+        //console.log("@@@@ user login output", output);
 
         res.header("x-auth", token).
             send(output);
@@ -238,7 +238,7 @@ router.post(
                         throw new Error('convoy not found')
                     }
 
-                    console.log("@@@  /shayara/update/:shayaraId  shayara.shayaraOwner , req.user._id", shayara.shayaraOwner, req.user._id);
+                    //console.log("@@@  /shayara/update/:shayaraId  shayara.shayaraOwner , req.user._id", shayara.shayaraOwner, req.user._id);
 
                 const isOwner = toString(shayara.shayaraOwner) === toString(req.user._id)
 
@@ -276,11 +276,11 @@ router.get(
                 "_id name  phone role"
             ).exec();
 
-            console.log('@@@ allUsersDocs', allUsersDocs);
+            //console.log('@@@ allUsersDocs', allUsersDocs);
 
             shayarasDoc = {shayarasDoc, drivers: allUsersDocs}
 
-            console.log('@@@ shayarasDoc', shayarasDoc);
+            //console.log('@@@ shayarasDoc', shayarasDoc);
 
             res.send(shayarasDoc);
         } catch (e) {
@@ -431,7 +431,7 @@ router.post(
 
     const registrationIds = !recipientId ? multDeviceId : [deviceId];
 
-    console.log('@@@@@@ /post registrationIds: ', registrationIds);
+    //console.log('@@@@@@ /post registrationIds: ', registrationIds);
     
     sender.send(message, {registrationIds: registrationIds}, function (err, response) {
        console.log('@@@ sender.send');
