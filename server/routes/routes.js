@@ -395,7 +395,10 @@ router.post(
 
     let deviceId = '';
     if (recipientId) {
-        deviceId = Object.values(await User.findById(recipientId, "deviceId")) 
+        deviceId = await User.findById(recipientId, "deviceId") 
+        //console.log('@@@@ post deviceId-1', deviceId);
+        deviceId = deviceId.deviceId
+        //console.log('@@@@ post deviceId-2', deviceId);
     }
     
     const  result = await User.find({shayara: user.shayara}, "deviceId")
@@ -436,7 +439,8 @@ router.post(
     sender.send(message, {registrationIds: registrationIds}, function (err, response) {
        console.log('@@@ sender.send');
         if (err) console.error('push notification error',err);
-        else if (response.success >= 1) 
+        //else if (response.success >= 1) 
+        else if (response) 
             {
                 //post.updateOne({status: 'received'});
                 console.log('notification response',response);
