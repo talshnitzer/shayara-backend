@@ -10,8 +10,7 @@ var PostSchema = new mongoose.Schema({
             required: true
         },
         recipientId: {
-            type: String,
-            required: true
+            type: String
         },
         recording: {
             type: Buffer,

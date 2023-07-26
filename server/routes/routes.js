@@ -209,30 +209,6 @@ router.post(
             }
             
             const shayara = new Shayara(body);
-            // const isExist = await Shayara.find({
-            //     startTime: {
-            //         $gt: shayara.startTime.getTime() - 30*60*1000,
-            //         $lt: shayara.startTime.getTime() + 30*60*1000
-            //     },
-                
-            //     startLocation: {
-            //      $near: {
-            //       $maxDistance: 100,
-            //       $geometry: {
-            //        type: "Point",
-            //        coordinates: [shayara.startLocation.coordinates[0], shayara.startLocation.coordinates[1]]
-            //       }
-            //      }
-            //     }
-            //    }).find((error, results) => {
-            //     if (error) console.log(error);
-            //     console.log(JSON.stringify(results, 0, 2));
-            //    });
-            
-            //    if (isExist.length !== 0) {
-            //     console.log('@@@@ isExist', isExist);
-            //     throw new Error('Shayara already exist')
-            // }
 
             await shayara.save();
 
@@ -379,8 +355,6 @@ router.get(
 
             await driver.remove()
 
-            //await User.deleteOne({id: req.params.id})
-
             res.send(driver);
            
         } catch (e) {
@@ -407,25 +381,25 @@ router.post(
      const recording = req.file.buffer;
     
     const user = req.user
+    //console.log('@@@ post user role', user.role, user.role.includes('shayaraAdmin'));
     
-    let {deviceId} = await User.findById(recipientId, "deviceId")
-    //let  {deviceId: multDeviceId} = await User.find({shayara: user.shayara}, "deviceId")
-    let  result = await User.find({shayara: user.shayara}, "deviceId")
-    let multDeviceId = result.map(a => a.deviceId)
-
     //console.log('@@@ /post multDeviceId: ', multDeviceId);
     //console.log('@@@ /post deviceId: ', deviceId);
 
      if (!recipientId) {
-        if (user.role !== 'shayaraAdmin') {
+        if (!user.role.includes('shayaraAdmin')  ) {
+            
             throw new Error('no recepient id')
         } 
     }
-     
-//console.log('@@@ /post deviceId: ', deviceId);
-    //  if (user.role !== 'shayaraAdmin' && recepient.role !== 'shayaraAdmin') {
-    //     throw new Error('messages can be sent only to admin')
-    //  }
+
+    let deviceId = '';
+    if (recipientId) {
+        deviceId = Object.values(await User.findById(recipientId, "deviceId")) 
+    }
+    
+    const  result = await User.find({shayara: user.shayara}, "deviceId")
+    const multDeviceId = result.map(a => a.deviceId)
 
     const post = new Post({
         time: new Date,
@@ -441,41 +415,16 @@ router.post(
     const message = new gcm.Message({
         "notification":
 		{
-            //"android":{},
             title: "Convoys",
             body : 'You have a new voice message'
-            
-			 
-			
-			// "body":"shimon has a nice body",
-			
-			// "title":"and bubik is his title"
-		},
-	
-	//"sentTime":1689945874618,
-	
+		},	
 	"data":{
         postId:  post._id,
         senderId: senderId,
         senderName:senderName
     },
 	
-	//"from":"951676142489",
 	
-	//"messageId":"0:1689945874625822%a120975fa120975f",
-	
-	//"ttl":2419200,
-	
-	//"collapseKey":"com.shsh.android.convoys"
-        // data: { 
-        //     postId:  post._id,
-        //     senderId: senderId,
-        //     senderName:senderName
-        //     }
-        // // notification: {
-        // //     title: "handsoff",
-        // //     body: "notification on voice post for you"
-        // // }
     });
     
 //console.log('@@@@@@ /post message: ', message);
@@ -487,7 +436,7 @@ router.post(
     sender.send(message, {registrationIds: registrationIds}, function (err, response) {
        console.log('@@@ sender.send');
         if (err) console.error('push notification error',err);
-        else if (response.success === 1) 
+        else if (response.success >= 1) 
             {
                 //post.updateOne({status: 'received'});
                 console.log('notification response',response);
