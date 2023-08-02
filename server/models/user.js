@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     },    
     role: {
         type: [String],
-        enum: ['superAdmin', 'shayaraAdmin','first','video','drone','last','driver'],
+        enum: ['superAdmin', 'shayaraAdmin','driver','rearguard', 'camera', 'drone', 'motorcycle'],
         trim: true,
         default: 'driver'
     },

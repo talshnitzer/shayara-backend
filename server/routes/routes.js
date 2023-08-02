@@ -31,6 +31,7 @@ const userOutputFields =
         'shayara'
                      ]
 
+const allRoles = ['shayaraAdmin','driver','rearguard', 'camera', 'drone', 'motorcycle']
 
 
 //admin LOGIN: 
@@ -83,7 +84,7 @@ router.post('/admin/validated/:id', async (req, res) => {
 //UPDATE my user details
 router.post(
     "/user/update",
-    auth(['shayaraAdmin','driver']),
+    auth(allRoles),
     async (req, res) => {
         try {
             const body = _.pick(req.body,
@@ -370,7 +371,7 @@ router.get(
 //UPLOAD recording '.wav' message file and send notification to recipient
 router.post(
     '/post',
-    auth(['shayaraAdmin', 'driver']),
+    auth(allRoles),
     upload.single('recording'), 
     async (req, res) => { //telling 'multer' to look for a file named 'recording' when the req comes in 
     
